@@ -1,0 +1,129 @@
+<!--
+@license
+Copyright © HatioLab Inc. All rights reserved.
+-->
+<link rel="import" href="../polymer/polymer.html">
+
+<script>
+	window.Things = window.Things || {};
+
+	/**
+	 * 다이어 로그에 이동과 사이즈 변화를 제공하는 behavior, 그중 Size변화는 될 수록 사용하지 않는 편이 낳다.
+	 *
+	 * @polymerBehavior Things.DialogResizeBehavior
+	 */
+	Things.DialogResizeBehavior = {
+
+		properties: {
+			/**
+			 * 팝업창 이동시 X 좌표로 사용되는 변수
+			 */
+			pos1: Number,
+			/**
+			 * 팝업창 이동시 Y 좌표로 사용되는 변수
+			 */
+			pos2: Number,
+			/**
+			 * 팝업창 이동시 X 좌표를 구하기 위해 사용되는 변수
+			 */
+			pos3: Number,
+			/**
+			 * 팝업창 이동시 Y 좌표를 구하기 위해 사용되는 변수
+			 */
+			pos4: Number,
+			/**
+			 * resize 여부를 결정하는 변수
+			 */
+			resizeable: {
+				type: Boolean,
+				value: false
+			},
+			/**
+			 * 이동 여부를 결정하는 변수
+			 */
+			moveable: {
+				type: Boolean,
+				value: false
+			},
+			_dialogId:{
+				type: String
+			},
+			_dragTarget:{
+				type: String
+			}
+		},
+
+			
+		/**
+		 * 팝업창 움직이게 하기 위해 attached때 실행되는 메소드
+		 * *******
+		 * @param {Object} elmnt
+		 */
+		_dragElement: function (elmnt) {
+			var pos1 = 0,
+				pos2 = 0,
+				pos3 = 0,
+				pos4 = 0;
+			if (this.$[this._dragTarget]) {
+				this.listen(this.$[this._dragTarget], 'mousedown', '_dragMouseDown');
+			} else {
+				this.listen(elmnt, 'mousedown', '_dragMouseDown');
+			}
+		},
+		
+		/**
+		 *  클릭이 끝나면 _closeDragElement로, 움직이면 _elementDrag로 분기해줌
+		 * *******
+		 * @param {Object} e
+		 */
+		_dragMouseDown: function (e) {
+			this.pos3 = e.clientX;
+			this.pos4 = e.clientY;
+			this.listen(document, 'mouseup', '_finishDragElement');
+			this.listen(document, 'mousemove', '_elementDrag');
+		},
+		
+		/**
+		 * 마우스의 위치에 따라 팝업창 배치하는 메소드
+		 * *******
+		 * @param {Object} e
+		 */
+		_elementDrag: function (e) {
+			e.stopPropagation();
+			e.preventDefault();
+			this.pos1 = this.pos3-e.clientX;
+			this.pos2 = this.pos4-e.clientY;
+			this.pos3 = e.clientX;
+			this.pos4 = e.clientY;
+			var elmnt = this.$[this._dialogId];
+			elmnt._onIronResize = function(){};
+			elmnt.style.top = (elmnt.offsetTop - this.pos2) + "px";
+			elmnt.style.left = (elmnt.offsetLeft - this.pos1) + "px";
+
+			return false;
+		},
+		/**
+		 * 클릭이 끝날 때, 기능을 종료하기 위해 사용되는 함수		
+		 */
+		_finishDragElement: function () {
+			this.unlisten(document, 'mouseup', '_finishDragElement');
+			this.unlisten(document, 'mousemove', '_elementDrag');
+		},
+		attached: function () {
+			var dialog = this.$[this._dialogId]
+			
+			if(this.moveable){
+				this._dragElement(dialog);
+			}
+
+			if (this.resizeable == true) {
+				dialog.style.resize = 'both';
+				dialog.style.overflow = 'auto';
+			} else {
+				dialog.style.resize = 'none';
+				dialog.style.overflow = 'visible';
+			}
+		}
+	};
+
+</script>
